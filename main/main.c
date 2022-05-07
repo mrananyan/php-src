@@ -18,8 +18,6 @@
 
 /* {{{ includes */
 
-#define ZEND_INCLUDE_FULL_WINDOWS_HEADERS
-
 #include "php.h"
 #include <stdio.h>
 #include <fcntl.h>
@@ -661,12 +659,7 @@ PHP_INI_MH(OnChangeBrowscap);
  * PHP_INCLUDE_PATH
  */
 
- /* Windows use the internal mail */
-#if defined(PHP_WIN32)
-# define DEFAULT_SENDMAIL_PATH NULL
-#else
 # define DEFAULT_SENDMAIL_PATH PHP_PROG_SENDMAIL " -t -i"
-#endif
 
 /* {{{ PHP_INI */
 PHP_INI_BEGIN()
@@ -757,9 +750,6 @@ PHP_INI_BEGIN()
 	STD_PHP_INI_ENTRY("user_ini.filename",		".user.ini",	PHP_INI_SYSTEM,		OnUpdateString,		user_ini_filename,	php_core_globals,		core_globals)
 	STD_PHP_INI_ENTRY("user_ini.cache_ttl",		"300",			PHP_INI_SYSTEM,		OnUpdateLong,		user_ini_cache_ttl,	php_core_globals,		core_globals)
 	STD_PHP_INI_ENTRY("hard_timeout",			"2",			PHP_INI_SYSTEM,		OnUpdateLong,		hard_timeout,		zend_executor_globals,	executor_globals)
-#ifdef PHP_WIN32
-	STD_PHP_INI_BOOLEAN("windows.show_crt_warning",		"0",		PHP_INI_ALL,		OnUpdateBool,			windows_show_crt_warning,			php_core_globals,	core_globals)
-#endif
 	STD_PHP_INI_ENTRY("syslog.facility",		"LOG_USER",		PHP_INI_SYSTEM,		OnSetFacility,		syslog_facility,	php_core_globals,		core_globals)
 	STD_PHP_INI_ENTRY("syslog.ident",		"php",			PHP_INI_SYSTEM,		OnUpdateString,		syslog_ident,		php_core_globals,		core_globals)
 	STD_PHP_INI_ENTRY("syslog.filter",		"no-ctrl",		PHP_INI_ALL,		OnSetLogFilter,		syslog_filter,		php_core_globals, 		core_globals)
@@ -1973,23 +1963,6 @@ void dummy_invalid_parameter_handler(
 	static int called = 0;
 	char buf[1024];
 	int len;
-
-	if (!called) {
-			if(PG(windows_show_crt_warning)) {
-			called = 1;
-			if (function) {
-				if (file) {
-					len = _snprintf(buf, sizeof(buf)-1, "Invalid parameter detected in CRT function '%ws' (%ws:%u)", function, file, line);
-				} else {
-					len = _snprintf(buf, sizeof(buf)-1, "Invalid parameter detected in CRT function '%ws'", function);
-				}
-			} else {
-				len = _snprintf(buf, sizeof(buf)-1, "Invalid CRT parameter detected (function not known)");
-			}
-			zend_error(E_WARNING, "%s", buf);
-			called = 0;
-		}
-	}
 }
 #endif
 
@@ -2142,20 +2115,6 @@ zend_result php_module_startup(sapi_module_struct *sf, zend_module_entry *additi
 	REGISTER_MAIN_DOUBLE_CONSTANT("PHP_FLOAT_EPSILON", DBL_EPSILON, CONST_PERSISTENT | CONST_CS);
 	REGISTER_MAIN_DOUBLE_CONSTANT("PHP_FLOAT_MAX", DBL_MAX, CONST_PERSISTENT | CONST_CS);
 	REGISTER_MAIN_DOUBLE_CONSTANT("PHP_FLOAT_MIN", DBL_MIN, CONST_PERSISTENT | CONST_CS);
-
-#ifdef PHP_WIN32
-	REGISTER_MAIN_LONG_CONSTANT("PHP_WINDOWS_VERSION_MAJOR",      EG(windows_version_info).dwMajorVersion, CONST_PERSISTENT | CONST_CS);
-	REGISTER_MAIN_LONG_CONSTANT("PHP_WINDOWS_VERSION_MINOR",      EG(windows_version_info).dwMinorVersion, CONST_PERSISTENT | CONST_CS);
-	REGISTER_MAIN_LONG_CONSTANT("PHP_WINDOWS_VERSION_BUILD",      EG(windows_version_info).dwBuildNumber, CONST_PERSISTENT | CONST_CS);
-	REGISTER_MAIN_LONG_CONSTANT("PHP_WINDOWS_VERSION_PLATFORM",   EG(windows_version_info).dwPlatformId, CONST_PERSISTENT | CONST_CS);
-	REGISTER_MAIN_LONG_CONSTANT("PHP_WINDOWS_VERSION_SP_MAJOR",   EG(windows_version_info).wServicePackMajor, CONST_PERSISTENT | CONST_CS);
-	REGISTER_MAIN_LONG_CONSTANT("PHP_WINDOWS_VERSION_SP_MINOR",   EG(windows_version_info).wServicePackMinor, CONST_PERSISTENT | CONST_CS);
-	REGISTER_MAIN_LONG_CONSTANT("PHP_WINDOWS_VERSION_SUITEMASK",  EG(windows_version_info).wSuiteMask, CONST_PERSISTENT | CONST_CS);
-	REGISTER_MAIN_LONG_CONSTANT("PHP_WINDOWS_VERSION_PRODUCTTYPE", EG(windows_version_info).wProductType, CONST_PERSISTENT | CONST_CS);
-	REGISTER_MAIN_LONG_CONSTANT("PHP_WINDOWS_NT_DOMAIN_CONTROLLER", VER_NT_DOMAIN_CONTROLLER, CONST_PERSISTENT | CONST_CS);
-	REGISTER_MAIN_LONG_CONSTANT("PHP_WINDOWS_NT_SERVER", VER_NT_SERVER, CONST_PERSISTENT | CONST_CS);
-	REGISTER_MAIN_LONG_CONSTANT("PHP_WINDOWS_NT_WORKSTATION", VER_NT_WORKSTATION, CONST_PERSISTENT | CONST_CS);
-#endif
 
 	php_binary_init();
 	if (PG(php_binary)) {
